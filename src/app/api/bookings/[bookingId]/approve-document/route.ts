@@ -1,13 +1,13 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import Booking from "@/models/Booking";
 
 export async function POST(
-  req: Request,
-  { params }: { params: { bookingId: string } }
+  req: NextRequest,
+  context: { params: Promise<{ bookingId: string }> }
 ) {
   try {
-    const { bookingId } = params;
+    const { bookingId } = await context.params; // ✅ await params in Next.js 15
     const { docType } = await req.json();
 
     if (!bookingId || !docType) {
@@ -20,11 +20,12 @@ export async function POST(
     await connectDB();
 
     const booking = await Booking.findById(bookingId);
-    if (!booking)
+    if (!booking) {
       return NextResponse.json(
         { success: false, message: "Booking not found" },
         { status: 404 }
       );
+    }
 
     // ✅ Update document status
     const updatedDocs = booking.document.map((doc: any) =>
